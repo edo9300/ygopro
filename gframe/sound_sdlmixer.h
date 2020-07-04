@@ -1,26 +1,16 @@
 #ifndef SOUND_SDL_MIXER_H
 #define SOUND_SDL_MIXER_H
 #include "sound_backend.h"
+#include <atomic>
 #include <condition_variable>
+#include <functional>
 #include <map>
 #include <mutex>
 #include <queue>
-#include <string>
 #include <thread>
 struct _Mix_Music;
 typedef struct _Mix_Music Mix_Music;
 struct Mix_Chunk;
-
-struct MixerThreadMessage {
-	enum class Type {
-		PLAY_MUSIC,
-		PLAY_SOUND,
-		TICK,
-		TERMINATE
-	} type;
-	std::string name;
-	bool loop;
-};
 
 class SoundMixer : public SoundBackend {
 public:
@@ -37,11 +27,10 @@ public:
 	void Tick();
 private:
 	void RunThread();
-	bool ThreadPlayMusic(const std::string& name, bool loop);
-	bool ThreadPlaySound(const std::string& name);
-	void ThreadTick();
+	void CallAsync(std::function<void()>&& operation);
 	std::thread mixerThread;
-	std::queue<MixerThreadMessage> threadQueue;
+	std::queue<std::function<void()>> threadQueue;
+	std::atomic<bool> exitThread;
 	std::mutex mtx;
 	std::condition_variable cv;
 	std::string cur_music;
