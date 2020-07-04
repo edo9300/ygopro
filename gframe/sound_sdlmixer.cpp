@@ -8,7 +8,7 @@
 #include <thread>
 #include <atomic>
 
-SoundMixer::SoundMixer() {
+SoundMixer::SoundMixer() : threadQueue(), mtx(), cv() {
 	SDL_SetMainReady();
 	if(SDL_Init(SDL_INIT_AUDIO) < 0)
 		throw std::runtime_error("Failed to init sdl audio device!");
@@ -24,6 +24,8 @@ SoundMixer::SoundMixer() {
 		fmt::printf("Mix_OpenAudio: %s\n", Mix_GetError());
 		throw std::runtime_error("Cannot open channels");
 	}
+	mixerThread = std::thread(&SoundMixer::RunThread, this);
+	mixerThread.detach();
 }
 void SoundMixer::SetSoundVolume(double volume) {
 	sound_volume = (int)(volume * 128);
@@ -34,6 +36,13 @@ void SoundMixer::SetMusicVolume(double volume) {
 	Mix_VolumeMusic(music_volume);
 }
 bool SoundMixer::PlayMusic(const std::string& name, bool loop) {
+	std::unique_lock<std::mutex> lock(mtx);
+	MixerThreadMessage message = { MixerThreadMessage::Type::PLAY_MUSIC, name, loop };
+	threadQueue.push(std::move(message));
+	cv.notify_one();
+	return true;
+}
+bool SoundMixer::ThreadPlayMusic(const std::string& name, bool loop) {
 	if(music && cur_music == name)
 		return false;
 	if(music) {
@@ -54,6 +63,13 @@ bool SoundMixer::PlayMusic(const std::string& name, bool loop) {
 	return true;
 }
 bool SoundMixer::PlaySound(const std::string& name) {
+	std::unique_lock<std::mutex> lock(mtx);
+	MixerThreadMessage message = { MixerThreadMessage::Type::PLAY_SOUND, name, false };
+	threadQueue.push(std::move(message));
+	cv.notify_one();
+	return true;
+}
+bool SoundMixer::ThreadPlaySound(const std::string& name) {
 	auto chunk = Mix_LoadWAV(name.c_str());
 	if(chunk) {
 		auto channel = Mix_PlayChannel(-1, chunk, 0);
@@ -88,6 +104,12 @@ bool SoundMixer::MusicPlaying() {
 	return Mix_PlayingMusic();
 }
 void SoundMixer::Tick() {
+	std::unique_lock<std::mutex> lock(mtx);
+	MixerThreadMessage message = { MixerThreadMessage::Type::TICK, "", false };
+	threadQueue.push(std::move(message));
+	cv.notify_one();
+}
+void SoundMixer::ThreadTick() {
 	for(auto chunk = sounds.begin(); chunk != sounds.end();) {
 		if(Mix_Playing(chunk->first) == 0) {
 			Mix_FreeChunk(chunk->second);
@@ -102,7 +124,13 @@ void KillSwitch(std::atomic_bool& die) {
 		exit(0);
 }
 SoundMixer::~SoundMixer() {
-	std::atomic_bool die{true};
+	{
+		std::unique_lock<std::mutex> lock(mtx);
+		MixerThreadMessage message = { MixerThreadMessage::Type::TERMINATE, "", false };
+		threadQueue.push(std::move(message));
+		cv.notify_one();
+	}
+	std::atomic_bool die{ true };
 	std::thread(KillSwitch, std::ref(die)).detach();
 	Mix_HaltChannel(-1);
 	Mix_HaltMusic();
@@ -115,5 +143,34 @@ SoundMixer::~SoundMixer() {
 	Mix_CloseAudio();
 	die = false;
 }
-
+void SoundMixer::RunThread() {
+	while (true) {
+		MixerThreadMessage message;
+		{
+			std::unique_lock<std::mutex> lock(mtx);
+			while (threadQueue.empty()) {
+				cv.wait(lock);
+			}
+			if (threadQueue.empty()) {
+				continue;
+			}
+			message = std::move(threadQueue.front());
+			threadQueue.pop();
+		}
+		switch (message.type) {
+		case MixerThreadMessage::Type::PLAY_SOUND:
+			ThreadPlaySound(message.name);
+			break;
+		case MixerThreadMessage::Type::PLAY_MUSIC:
+			ThreadPlayMusic(message.name, message.loop);
+			break;
+		case MixerThreadMessage::Type::TERMINATE:
+			return;
+		case MixerThreadMessage::Type::TICK:
+		default:
+			ThreadTick();
+			break;
+		}
+	}
+}
 #endif //YGOPRO_USE_SDL_MIXER
