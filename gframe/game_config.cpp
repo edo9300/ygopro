@@ -5,13 +5,91 @@
 #include "utils.h"
 #include "config.h"
 #include "logging.h"
+#if XDG_ENVIRONMENT && _WIN32
+#include <Shlobj.h>
+#include <Shlobj_core.h>
+
+namespace
+{
+	epro::path_string
+	GetSpecialFolder (int csidl)
+	{
+		std::vector<wchar_t> path;
+		HRESULT hr;
+		LPITEMIDLIST pidl = NULL;
+		BOOL b;
+		epro::path_string result;
+		path.reserve(MAX_PATH+1);
+
+		hr = SHGetFolderPathA (NULL, csidl, NULL, 0, path.data());
+		if (hr == S_OK)
+			return Utils::ToPathString(path.data());
+		else
+			return EPRO_TEXT("."); // default to working directory
+	}
+}
+
+#endif
 
 namespace ygo {
 
 GameConfig::GameConfig() {
-	Load(EPRO_TEXT("./config/system.conf"));
+#if XDG_ENVIRONMENT
+	{
+#ifndef _WIN32
+		const char* home_env = getenv("HOME");
+		epro::path_string home = Utils::ToPathString(home_env);
+#endif
+
+		const char* data_home = getenv("XDG_DATA_HOME");
+		const char* cache_home = getenv("XDG_CACHE_HOME");
+		const char* config_home = getenv("XDG_CONFIG_HOME");
+
+		if (cache_home)
+			cache_directory = Utils::ToPathString(cache_home) / EPRO_TEXT("ygopro");
+		else {
+#ifdef _WIN32
+			cache_directory = GetSpecialFolder(CSIDL_INTERNET_CACHE) / EPRO_TEXT("ygopro");
+#else
+			cache_directory = home / EPRO_TEXT(".cache/ygopro");
+#endif
+		}
+		if (data_home)
+			data_directory = Utils::ToPathString(data_home) / EPRO_TEXT("ygopro");
+		else {
+#ifdef _WIN32
+			data_directory = GetSpecialFolder(CSIDL_LOCAL_APPDATA) / EPRO_TEXT("ygopro");
+#else
+			data_directory = home / EPRO_TEXT(".local/share/ygopro");
+#endif
+		}
+
+		if (config_home)
+			config_directory = Utils::ToPathString(config_home) / EPRO_TEXT("ygopro");
+		else {
+#ifdef _WIN32
+			config_directory = GetSpecialFolder(CSIDL_LOCAL_APPDATA) / EPRO_TEXT("ygopro");
+#else
+			config_directory = home / EPRO_TEXT(".config/ygopro");
+#endif
+		}
+
+#ifdef _WIN32
+		sysconfig_directory = EPRO_TEXT("C:/ProjectIgnis");
+		sysdata_directory = EPRO_TEXT("C:/ProjectIgnis");
+#else
+		sysconfig_directory = EPRO_TEXT("/etc/ygopro");
+		sysdata_directory = EPRO_TEXT("/usr/share/ygopro");
+#endif
+	}
+#endif
+	if(!Load(config_directory / EPRO_TEXT("system.conf")))
+		Load(sysconfig_directory / EPRO_TEXT("system.conf"));
+
 	if(configs.empty()) {
-		std::ifstream conf_file(EPRO_TEXT("./config/configs.json"), std::ifstream::in);
+		std::ifstream conf_file(config_directory / EPRO_TEXT("configs.json"), std::ifstream::in);
+		if (!conf_file)
+			conf_file.open(sysconfig_directory / EPRO_TEXT("configs.json"));
 		if(conf_file.good()) {
 			try {
 				conf_file >> configs;
@@ -21,7 +99,7 @@ GameConfig::GameConfig() {
 				//throw(e);
 			}
 		}
-		std::ifstream user_conf_file(EPRO_TEXT("./config/user_configs.json"), std::ifstream::in);
+                std::ifstream user_conf_file(config_directory / EPRO_TEXT("user_configs.json"), std::ifstream::in);
 		if(user_conf_file.good()) {
 			try {
 				user_conf_file >> user_configs;

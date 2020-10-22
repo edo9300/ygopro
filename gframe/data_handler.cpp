@@ -133,8 +133,9 @@ DataHandler::DataHandler(epro::path_stringview working_dir) {
 	LoadDatabases();
 	LoadPicUrls();
 	deckManager->LoadLFList();
-	auto strings_loaded = dataManager->LoadStrings(EPRO_TEXT("./config/strings.conf"));
-	strings_loaded = dataManager->LoadStrings(EPRO_TEXT("./expansions/strings.conf")) || strings_loaded;
+	auto strings_loaded = dataManager->LoadStrings(configs->config_directory / EPRO_TEXT("strings.conf"));
+	strings_loaded = strings_loaded || dataManager->LoadStrings(configs->sysconfig_directory / EPRO_TEXT("strings.conf"));
+	strings_loaded = dataManager->LoadStrings(configs->data_directory / EPRO_TEXT("expansions/strings.conf")) || strings_loaded;
 	if(!strings_loaded) {
 		throw std::runtime_error("Failed to load strings!");
 	}

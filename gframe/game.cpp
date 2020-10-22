@@ -108,7 +108,7 @@ bool Game::Initialize() {
 	if(!(ocgcore = LoadOCGcore(Utils::working_dir)) && !(ocgcore = LoadOCGcore(fmt::format(EPRO_TEXT("{}/expansions/"), Utils::working_dir))))
 		coreloaded = false;
 #endif
-	skinSystem = new CGUISkinSystem(fmt::format(EPRO_TEXT("{}/skin"), Utils::working_dir).data(), device);
+	skinSystem = new CGUISkinSystem(fmt::format(EPRO_TEXT("{}/skin"), gGameConfig->data_directory).data(), device);
 	if(!skinSystem)
 		ErrorLog("Couldn't create skin system");
 	linePatternGL = 0x0f0f;
@@ -1044,7 +1044,7 @@ bool Game::Initialize() {
 	stHandTestSettings->setEnabled(coreloaded);
 	stHandTestSettings->setTextAlignment(irr::gui::EGUIA_CENTER, irr::gui::EGUIA_CENTER);
 	defaultStrings.emplace_back(stHandTestSettings, 1375);
-	
+
 	wHandTest = env->addWindow(Scale(mainMenuLeftX, 200, mainMenuRightX, 450), false, gDataManager->GetSysString(1297).data());
 	wHandTest->getCloseButton()->setVisible(false);
 	wHandTest->setVisible(false);
@@ -1172,7 +1172,7 @@ bool Game::Initialize() {
 	wReplay->getCloseButton()->setVisible(false);
 	wReplay->setVisible(false);
 	lstReplayList = irr::gui::CGUIFileSelectListBox::addFileSelectListBox(env, wReplay, LISTBOX_REPLAY_LIST, Scale(10, 30, 350, 400), filesystem, true, true, false);
-	lstReplayList->setWorkingPath(L"./replay", true);
+	lstReplayList->setWorkingPath(Utils::ToUnicodeIfNeeded(gGameConfig->data_directory / EPRO_TEXT("replay")), true);
 	lstReplayList->addFilteredExtensions(coreloaded ? std::vector<std::wstring>{L"yrp", L"yrpx"} : std::vector<std::wstring>{ L"yrpx" });
 	lstReplayList->setItemHeight(Scale(18));
 	btnLoadReplay = env->addButton(Scale(470, 355, 570, 380), wReplay, BUTTON_LOAD_REPLAY, gDataManager->GetSysString(1348).data());
@@ -1209,7 +1209,7 @@ bool Game::Initialize() {
 	wSinglePlay->setVisible(false);
 	lstSinglePlayList = irr::gui::CGUIFileSelectListBox::addFileSelectListBox(env, wSinglePlay, LISTBOX_SINGLEPLAY_LIST, Scale(10, 30, 350, 400), filesystem, true, true, false);
 	lstSinglePlayList->setItemHeight(Scale(18));
-	lstSinglePlayList->setWorkingPath(L"./puzzles", true);
+	lstSinglePlayList->setWorkingPath(Utils::ToUnicodeIfNeeded(gGameConfig->data_directory / EPRO_TEXT("puzzles")), true);
 	lstSinglePlayList->addFilteredExtensions({L"lua"});
 	btnLoadSinglePlay = env->addButton(Scale(460, 355, 570, 380), wSinglePlay, BUTTON_LOAD_SINGLEPLAY, gDataManager->GetSysString(1357).data());
 	defaultStrings.emplace_back(btnLoadSinglePlay, 1357);
@@ -1978,7 +1978,7 @@ bool Game::ApplySkin(const epro::path_string& skinname, bool reload, bool firstr
 }
 void Game::RefreshDeck(irr::gui::IGUIComboBox* cbDeck) {
 	cbDeck->clear();
-	for(auto& file : Utils::FindFiles(EPRO_TEXT("./deck/"), { EPRO_TEXT("ydk") })) {
+	for(auto& file : Utils::FindFiles(gGameConfig->data_directory / EPRO_TEXT("deck/"), { EPRO_TEXT("ydk") })) {
 		cbDeck->addItem(Utils::ToUnicodeIfNeeded(file.substr(0, file.size() - 4)).data());
 	}
 	for(size_t i = 0; i < cbDeck->getItemCount(); ++i) {
@@ -3249,6 +3249,8 @@ std::wstring Game::ReadPuzzleMessage(const std::wstring& script_name) {
 	return BufferIO::DecodeUTF8s(res);
 }
 epro::path_string Game::FindScript(epro::path_stringview name, MutexLockedIrrArchivedFile* retarchive) {
+ 	if (!Utils::PathIsRelative(name))
+		return epro::path_string(name);
 	for(auto& path : script_dirs) {
 		if(path == EPRO_TEXT("archives")) {
 			if(auto tmp = Utils::FindFileInArchives(EPRO_TEXT("script/"), name)) {
@@ -3371,32 +3373,32 @@ void Game::PopulateResourcesDirectories() {
 				cover_dirs.push_back(image_dir / EPRO_TEXT("cover/"));
 				field_dirs.push_back(image_dir / EPRO_TEXT("field/"));
 			});
-	pic_dirs.push_back(EPRO_TEXT("./pics/"));
-	cover_dirs.push_back(EPRO_TEXT("./pics/cover/"));
-	field_dirs.push_back(EPRO_TEXT("./pics/field/"));
 #else
-	script_dirs.push_back(EPRO_TEXT("./expansions/script/"));
-	auto expansions_subdirs = Utils::FindSubfolders(EPRO_TEXT("./expansions/script/"));
-	script_dirs.insert(script_dirs.end(), std::make_move_iterator(expansions_subdirs.begin()), std::make_move_iterator(expansions_subdirs.end()));
-	script_dirs.push_back(EPRO_TEXT("archives"));
-	script_dirs.push_back(EPRO_TEXT("./script/"));
-	auto script_subdirs = Utils::FindSubfolders(EPRO_TEXT("./script/"));
-	script_dirs.insert(script_dirs.end(), std::make_move_iterator(script_subdirs.begin()), std::make_move_iterator(script_subdirs.end()));
-	pic_dirs.push_back(EPRO_TEXT("./expansions/pics/"));
-	pic_dirs.push_back(EPRO_TEXT("archives"));
-	pic_dirs.push_back(EPRO_TEXT("./pics/"));
-	cover_dirs.push_back(EPRO_TEXT("./expansions/pics/cover/"));
-	cover_dirs.push_back(EPRO_TEXT("archives"));
-	cover_dirs.push_back(EPRO_TEXT("./pics/cover/"));
-	field_dirs.push_back(EPRO_TEXT("./expansions/pics/field/"));
-	field_dirs.push_back(EPRO_TEXT("archives"));
-	field_dirs.push_back(EPRO_TEXT("./pics/field/"));
+	script_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("./expansions/script/"));
+	auto expansions_subdirs = Utils::FindSubfolders(gGameConfig->data_directory / EPRO_TEXT("./expansions/script/"));
+	script_dirs.insert(script_dirs.end(), expansions_subdirs.begin(), expansions_subdirs.end());
+	script_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("archives"));
+	script_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("./script/"));
+	auto script_subdirs = Utils::FindSubfolders(gGameConfig->data_directory / EPRO_TEXT("./script/"));
+	script_dirs.insert(script_dirs.end(), script_subdirs.begin(), script_subdirs.end());
+	pic_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("./expansions/pics/"));
+	pic_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("archives"));
+	cover_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("./expansions/pics/cover/"));
+	cover_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("archives"));
+	field_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("./expansions/pics/field/"));
+	field_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("archives"));
 #endif
+	pic_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("./pics/"));
+	cover_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("./pics/cover/"));
+	field_dirs.push_back(gGameConfig->data_directory / EPRO_TEXT("./pics/field/"));
+	pic_dirs.push_back(gGameConfig->cache_directory / EPRO_TEXT("./pics/"));
+	cover_dirs.push_back(gGameConfig->cache_directory / EPRO_TEXT("./pics/cover/"));
+	field_dirs.push_back(gGameConfig->cache_directory / EPRO_TEXT("./pics/field/"));
 }
 
 void Game::PopulateLocales() {
 	locales.clear();
-	for(auto& locale : Utils::FindSubfolders(EPRO_TEXT("./config/languages/"), 1, false)) {
+	for(auto& locale : Utils::FindSubfolders(gGameConfig->config_directory / EPRO_TEXT("languages/"), 1, false)) {
 		locales.emplace_back(locale, std::vector<epro::path_string>());
 	}
 }
@@ -3413,7 +3415,7 @@ void Game::ApplyLocale(size_t index, bool forced) {
 	if(index > 0) {
 		try {
 			gGameConfig->locale = locales[index - 1].first;
-			auto locale = fmt::format(EPRO_TEXT("./config/languages/{}"), gGameConfig->locale);
+			auto locale = fmt::format(gGameConfig->config_directory / EPRO_TEXT("languages/{}"), gGameConfig->locale);
 			for(auto& file : Utils::FindFiles(locale, { EPRO_TEXT("cdb") })) {
 				gDataManager->LoadLocaleDB(fmt::format(EPRO_TEXT("{}/{}"), locale, file));
 			}
