@@ -32,4 +32,17 @@ using stringview = nonstd::basic_string_view<char>;
 using wstringview = nonstd::basic_string_view<wchar_t>;
 }
 using namespace nonstd::literals;
+inline epro::path_string operator/(const epro::path_string& base, const epro::path_string subdir) {
+	if (base.empty() || base == EPRO_TEXT(".")) {
+		epro::path_string path(subdir);
+		return path;
+	}
+	else {
+		epro::path_string path(base);
+		if (base.back() != EPRO_TEXT('/'))
+			path += EPRO_TEXT("/");
+		path += subdir;
+		return path;
+	}
+}
 #endif /* TEXT_TYPES_H_ */
