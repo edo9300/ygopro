@@ -180,6 +180,8 @@ T Utils::NormalizePath(T path, bool trailing_slash) {
 		}
 		it++;
 	}
+	if (path.front() == slash)
+        	normalpath += slash;
 	for(auto it = paths.begin(); it != (paths.end() - 1); it++) {
 		normalpath += *it + slash;
 	}
