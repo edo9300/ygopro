@@ -75,7 +75,7 @@ void SoundManager::RefreshBGMList() {
 }
 void SoundManager::RefreshBGMDir(epro::path_string path, BGM scene) {
 #ifdef BACKEND
-	for(auto& file : Utils::FindFiles(fmt::format(EPRO_TEXT("./sound/BGM/{}"), path), { EPRO_TEXT("mp3"), EPRO_TEXT("ogg"), EPRO_TEXT("wav"), EPRO_TEXT("flac") })) {
+	for(auto& file : Utils::FindFiles(fmt::format(working_dir / EPRO_TEXT("./sound/BGM/{}"), path), { EPRO_TEXT("mp3"), EPRO_TEXT("ogg"), EPRO_TEXT("wav"), EPRO_TEXT("flac") })) {
 		auto conv = Utils::ToUTF8IfNeeded(fmt::format(EPRO_TEXT("{}/{}"), path, file));
 		BGMList[BGM::ALL].push_back(conv);
 		BGMList[scene].push_back(std::move(conv));
