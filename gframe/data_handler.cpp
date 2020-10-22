@@ -13,15 +13,30 @@
 #include "IrrlichtCommonIncludes1.9/CFileSystem.h"
 #include "Android/porting_android.h"
 #endif
+#include "deck_manager.h"
 
 namespace ygo {
 
 void DataHandler::LoadDatabases() {
+#ifdef YGOPRO_ENVIRONMENT_PATHS
+	const char* data_path_env = getenv("YGOPRO_DATA_PATH");
+	if(!data_path_env) return;
+	epro::path_string data_path_s = Utils::ToPathString(data_path_env);
+	ygo::Utils::PathForeach(
+		data_path_s,
+		[&](const epro::path_string& prefix) {
+			for (auto& file : Utils::FindFiles(prefix, { EPRO_TEXT("cdb") }))
+				dataManager->LoadDB(prefix / file);
+			deckManager->LoadLFListSingle(prefix / EPRO_TEXT("lflist.conf"));
+			dataManager->LoadStrings(prefix / EPRO_TEXT("strings.conf"));
+		});
+#else
 	if(std::ifstream("cards.cdb").good())
 		dataManager->LoadDB(EPRO_TEXT("cards.cdb"));
 	for(auto& file : Utils::FindFiles(EPRO_TEXT("./expansions/"), { EPRO_TEXT("cdb") }, 2))
 		dataManager->LoadDB(EPRO_TEXT("./expansions/") + file);
 	LoadArchivesDB();
+#endif
 }
 void DataHandler::LoadArchivesDB() {
 	std::vector<char> buffer;
