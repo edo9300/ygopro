@@ -52,14 +52,14 @@ bool SoundManager::IsUsable() {
 }
 void SoundManager::RefreshBGMList() {
 #ifdef BACKEND
-	Utils::MakeDirectory(EPRO_TEXT("./sound/BGM/"));
-	Utils::MakeDirectory(EPRO_TEXT("./sound/BGM/duel"));
-	Utils::MakeDirectory(EPRO_TEXT("./sound/BGM/menu"));
-	Utils::MakeDirectory(EPRO_TEXT("./sound/BGM/deck"));
-	Utils::MakeDirectory(EPRO_TEXT("./sound/BGM/advantage"));
-	Utils::MakeDirectory(EPRO_TEXT("./sound/BGM/disadvantage"));
-	Utils::MakeDirectory(EPRO_TEXT("./sound/BGM/win"));
-	Utils::MakeDirectory(EPRO_TEXT("./sound/BGM/lose"));
+	Utils::MakeDirectory(Utils::ToPathString(working_dir) / EPRO_TEXT("sound/BGM/"));
+	Utils::MakeDirectory(Utils::ToPathString(working_dir) / EPRO_TEXT("sound/BGM/duel"));
+	Utils::MakeDirectory(Utils::ToPathString(working_dir) / EPRO_TEXT("sound/BGM/menu"));
+	Utils::MakeDirectory(Utils::ToPathString(working_dir) / EPRO_TEXT("sound/BGM/deck"));
+	Utils::MakeDirectory(Utils::ToPathString(working_dir) / EPRO_TEXT("sound/BGM/advantage"));
+	Utils::MakeDirectory(Utils::ToPathString(working_dir) / EPRO_TEXT("sound/BGM/disadvantage"));
+	Utils::MakeDirectory(Utils::ToPathString(working_dir) / EPRO_TEXT("sound/BGM/win"));
+	Utils::MakeDirectory(Utils::ToPathString(working_dir) / EPRO_TEXT("sound/BGM/lose"));
 	for (auto list : BGMList) {
 		list.clear();
 	}
