@@ -23,7 +23,7 @@ void ImageManager::InitTexture_(irr::video::ITexture*& texture, irr::video::ITex
 	if (!texture) texture = driver->getTexture((textures_path2 / jpg).c_str());
 	default_texture = texture;
 }
-void ImageManager::InitTextureSized_(irr::video::ITexture*& texture, irr::video::ITexture*& default_texture, epro::path_string path, uint w, uint h)
+void ImageManager::InitTextureSized_(irr::video::ITexture*& texture, irr::video::ITexture*& default_texture, epro::path_string path, uint32_t w, uint32_t h)
 {
 	auto png = path + EPRO_TEXT(".png"), jpg = path + EPRO_TEXT(".jpg");
 	texture = GetTextureFromFile((textures_path / png).c_str(), mainGame->Scale(w), mainGame->Scale(h));
@@ -41,7 +41,7 @@ void ImageManager::GetTexture_(irr::video::ITexture*& texture, irr::video::IText
 	if (!texture) texture = driver->getTexture((textures_path2 / jpg).c_str());
 	if (!texture) texture = default_texture;
 }
-void ImageManager::GetTextureSized_(irr::video::ITexture*& texture, irr::video::ITexture* default_texture, epro::path_string path, uint w, uint h)
+void ImageManager::GetTextureSized_(irr::video::ITexture*& texture, irr::video::ITexture* default_texture, epro::path_string path, uint32_t w, uint32_t h)
 {
 	auto png = path + EPRO_TEXT(".png"), jpg = path + EPRO_TEXT(".jpg");
 	texture = GetTextureFromFile((textures_path / png).c_str(), mainGame->Scale(w), mainGame->Scale(h));
