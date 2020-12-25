@@ -58,7 +58,7 @@ void NameThread(const char* threadName) {
 	__except(EXCEPTION_EXECUTE_HANDLER) {}
 }
 
-bool PathIsRelative(const path_char* path)
+bool PathIsRelative(const epro::path_char* path)
 {
 #ifdef UNICODE
 	return PathIsRelativeW(path);
