@@ -123,9 +123,9 @@ private:
 	A(tSettings)
 #undef A
 	void GetTexture_(irr::video::ITexture*& texture, irr::video::ITexture* fallback, epro::path_string path);
-	void GetTextureSized_(irr::video::ITexture*& texture, irr::video::ITexture* fallback, epro::path_string path, uint w, uint h);
+	void GetTextureSized_(irr::video::ITexture*& texture, irr::video::ITexture* fallback, epro::path_string path, uint32_t w, uint32_t h);
 	void InitTexture_(irr::video::ITexture*& texture, irr::video::ITexture*& default_texture, epro::path_string path);
-	void InitTextureSized_(irr::video::ITexture*& texture, irr::video::ITexture*& default_texture, epro::path_string path, uint w, uint h);
+	void InitTextureSized_(irr::video::ITexture*& texture, irr::video::ITexture*& default_texture, epro::path_string path, uint32_t w, uint32_t h);
 	void ClearFutureObjects();
 	void RefreshCovers();
 	image_path LoadCardTexture(uint32_t code, imgType type, std::atomic<irr::s32>& width, std::atomic<irr::s32>& height, chrono_time timestamp_id, std::atomic<chrono_time>& source_timestamp_id);
