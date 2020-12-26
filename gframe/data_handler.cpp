@@ -13,15 +13,30 @@
 #include "IrrlichtCommonIncludes1.9/CFileSystem.h"
 #include "Android/porting_android.h"
 #endif
+#include "deck_manager.h"
 
 namespace ygo {
 
 void DataHandler::LoadDatabases() {
+#ifdef YGOPRO_ENVIRONMENT_PATHS
+	const char* data_path_env = getenv("YGOPRO_DATA_PATH");
+	if(!data_path_env) return;
+	epro::path_string data_path_s = Utils::ToPathString(data_path_env);
+	ygo::Utils::PathForeach(
+		data_path_s,
+		[&](const epro::path_string& prefix) {
+			for (auto& file : Utils::FindFiles(prefix, { EPRO_TEXT("cdb") }))
+				dataManager->LoadDB(prefix / file);
+			deckManager->LoadLFListSingle(prefix / EPRO_TEXT("lflist.conf"));
+			dataManager->LoadStrings(prefix / EPRO_TEXT("strings.conf"));
+		});
+#else
 	if(std::ifstream("cards.cdb").good())
 		dataManager->LoadDB(EPRO_TEXT("cards.cdb"));
 	for(auto& file : Utils::FindFiles(EPRO_TEXT("./expansions/"), { EPRO_TEXT("cdb") }, 2))
 		dataManager->LoadDB(EPRO_TEXT("./expansions/") + file);
 	LoadArchivesDB();
+#endif
 }
 void DataHandler::LoadArchivesDB() {
 	std::vector<char> buffer;
@@ -110,7 +125,7 @@ DataHandler::DataHandler(epro::path_stringview working_dir) {
 	LoadZipArchives();
 	deckManager = std::unique_ptr<DeckManager>(new DeckManager());
 	gitManager = std::unique_ptr<RepoManager>(new RepoManager());
-	sounds = std::unique_ptr<SoundManager>(new SoundManager(configs->soundVolume / 100.0, configs->musicVolume / 100.0, configs->enablesound, configs->enablemusic, working_dir));
+	sounds = std::unique_ptr<SoundManager>(new SoundManager(configs->soundVolume / 100.0, configs->musicVolume / 100.0, configs->enablesound, configs->enablemusic, configs->data_directory));
 	gitManager->LoadRepositoriesFromJson(configs->user_configs);
 	gitManager->LoadRepositoriesFromJson(configs->configs);
 	dataManager = std::unique_ptr<DataManager>(new DataManager());
@@ -118,8 +133,9 @@ DataHandler::DataHandler(epro::path_stringview working_dir) {
 	LoadDatabases();
 	LoadPicUrls();
 	deckManager->LoadLFList();
-	auto strings_loaded = dataManager->LoadStrings(EPRO_TEXT("./config/strings.conf"));
-	strings_loaded = dataManager->LoadStrings(EPRO_TEXT("./expansions/strings.conf")) || strings_loaded;
+	auto strings_loaded = dataManager->LoadStrings(configs->config_directory / EPRO_TEXT("strings.conf"));
+	strings_loaded = strings_loaded || dataManager->LoadStrings(configs->sysconfig_directory / EPRO_TEXT("strings.conf"));
+	strings_loaded = dataManager->LoadStrings(configs->data_directory / EPRO_TEXT("expansions/strings.conf")) || strings_loaded;
 	if(!strings_loaded) {
 		throw std::runtime_error("Failed to load strings!");
 	}

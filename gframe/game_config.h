@@ -16,7 +16,13 @@ struct GameConfig
 {
 	GameConfig();
 	bool Load(const epro::path_char* filename);
+	inline bool Load(const epro::path_string& path) {
+		return Load(path.c_str());
+	}
 	bool Save(const epro::path_char* filename);
+	inline bool Save(const epro::path_string& path) {
+		return Save(path.c_str());
+	}
 
 	bool use_d3d = true;
 	bool vsync = true;
@@ -102,6 +108,13 @@ struct GameConfig
 	epro::path_string skin = EPRO_TEXT("none");
 	epro::path_string locale = EPRO_TEXT("English");
 	std::string ssl_certificate_path = "";
+
+	epro::path_string cache_directory = EPRO_TEXT("./");
+	epro::path_string config_directory = EPRO_TEXT("./config");
+	epro::path_string data_directory = EPRO_TEXT("./");
+
+	epro::path_string sysconfig_directory = EPRO_TEXT("./config");
+	epro::path_string sysdata_directory = EPRO_TEXT("./");
 
 	nlohmann::json configs;
 	nlohmann::json user_configs;

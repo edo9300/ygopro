@@ -111,7 +111,7 @@ void ImageDownloader::DownloadPic() {
 		downloading_images[type][file.code].status = downloadStatus::DOWNLOADING;
 		downloading.push_back(std::move(file));
 		lck.unlock();
-		auto name = fmt::format(EPRO_TEXT("./pics/temp/{}"), code);
+		auto name = gGameConfig->cache_directory / fmt::format(EPRO_TEXT("pics/temp/{}"), code);
 		if(type == imgType::THUMB)
 			type = imgType::ART;
 		const auto dest_folder = [type, &name, code]()->epro::path_string {
@@ -120,16 +120,16 @@ void ImageDownloader::DownloadPic() {
 				default:
 				case imgType::ART:
 				case imgType::THUMB: {
-					dest = EPRO_TEXT("./pics/{}");
+					dest = (gGameConfig->cache_directory / EPRO_TEXT("pics/{}")).c_str();
 					break;
 				}
 				case imgType::FIELD: {
-					dest = EPRO_TEXT("./pics/field/{}");
+					dest = (gGameConfig->cache_directory / EPRO_TEXT("pics/field/{}")).c_str();
 					name.append(EPRO_TEXT("_f"));
 					break;
 				}
 				case imgType::COVER: {
-					dest = EPRO_TEXT("./pics/cover/{}");
+					dest = (gGameConfig->cache_directory / EPRO_TEXT("pics/cover/{}")).c_str();
 					name.append(EPRO_TEXT("_c"));
 					break;
 				}

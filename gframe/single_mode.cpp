@@ -149,7 +149,7 @@ restart:
 		if(open_file) {
 			script_name = Utils::ToUTF8IfNeeded(open_file_name);
 			if(!mainGame->LoadScript(pduel, script_name)) {
-				script_name = Utils::ToUTF8IfNeeded(EPRO_TEXT("./puzzles/") + open_file_name);
+				script_name = Utils::ToUTF8IfNeeded(gGameConfig->data_directory / EPRO_TEXT("puzzles/") + open_file_name);
 				loaded = mainGame->LoadScript(pduel, script_name);
 			}
 		} else {

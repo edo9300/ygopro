@@ -59,6 +59,15 @@ newoption {
 	value = "url",
 	description = "API endpoint to check for updates from"
 }
+newoption {
+	trigger = "environment-paths",
+	description = "Read databases, scripts and images from YGOPRO_*_PATH"
+}
+newoption
+{
+	trigger = "xdg-environment",
+	description = "Use XDG config, data and cache directories."
+}
 workspace "ygo"
 	location "build"
 	language "C++"
