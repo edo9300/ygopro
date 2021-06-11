@@ -163,8 +163,9 @@ DataHandler::DataHandler(epro::path_stringview working_dir) {
 #endif
 	filesystem = new irr::io::CFileSystem();
 	dataManager = std::unique_ptr<DataManager>(new DataManager());
-	auto strings_loaded = dataManager->LoadStrings(EPRO_TEXT("./config/strings.conf"));
-	strings_loaded = dataManager->LoadStrings(EPRO_TEXT("./expansions/strings.conf")) || strings_loaded;
+	auto strings_loaded = dataManager->LoadStrings(configs->config_directory / EPRO_TEXT("strings.conf"));
+	strings_loaded = strings_loaded || dataManager->LoadStrings(configs->sysconfig_directory / EPRO_TEXT("strings.conf"));
+	strings_loaded = dataManager->LoadStrings(configs->data_directory / EPRO_TEXT("expansions/strings.conf")) || strings_loaded;
 	if(!strings_loaded)
 		throw std::runtime_error("Failed to load strings!");
 	Utils::filesystem = filesystem;
@@ -179,7 +180,7 @@ DataHandler::DataHandler(epro::path_stringview working_dir) {
 	LoadDatabases();
 	LoadPicUrls();
 	deckManager->LoadLFList();
-	WindBotPanel::absolute_deck_path = Utils::ToUnicodeIfNeeded(Utils::GetAbsolutePath(EPRO_TEXT("./deck")));
+	WindBotPanel::absolute_deck_path = Utils::ToUnicodeIfNeeded(configs->data_directory / EPRO_TEXT("./deck"));
 }
 DataHandler::~DataHandler() {
 	if(filesystem)
