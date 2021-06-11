@@ -44,4 +44,18 @@ template<typename T>
 using basic_string_view = nonstd::basic_string_view<T>;
 }
 using namespace nonstd::literals;
+inline epro::path_string operator/(const epro::path_string& base, epro::path_stringview subdir) {
+	if (base.empty() || base == EPRO_TEXT(".")) {
+		epro::path_string path(subdir);
+		return path;
+	}
+	else {
+		epro::path_string path(base);
+		if (base.back() != EPRO_TEXT('/'))
+			path += EPRO_TEXT("/");
+		path += epro::path_string(subdir);
+		return path;
+	}
+}
+
 #endif /* TEXT_TYPES_H_ */
