@@ -341,6 +341,16 @@ namespace ygo {
 		return true;
 	}
 
+	void Utils::PathForeach(epro::path_stringview path, const std::function<void(epro::path_string)>& cb)
+	{
+		// FIXME: should be ';' in WIN32 and WIN64.
+		static const epro::path_char path_sep = EPRO_TEXT(':');
+		std::basic_istringstream<epro::path_char> dirs(path.data());
+		epro::path_string dir;
+		while (std::getline(dirs, dir, path_sep))
+			cb(dir);
+	}
+
 	epro::path_stringview Utils::GetExePath() {
 		static epro::path_string binarypath = []()->epro::path_string {
 #ifdef _WIN32
@@ -484,4 +494,3 @@ namespace ygo {
 #endif
 	}
 }
-
